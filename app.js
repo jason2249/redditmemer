@@ -56,7 +56,7 @@ if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
   process.exit(1);
 }
 app.get('/', function(req, res) {
-    console.log("Hello, world!");
+    console.log("Hello, world!!");
 });
 /*
  * Use your own validation token. Check that the token used in the Webhook 
