@@ -29,7 +29,7 @@ app.use(express.static('public'));
  * set them using environment variables or modifying the config file in /config.
  *
  */
-
+console.log("hello, world!");
 // App Secret can be retrieved from the App Dashboard
 const APP_SECRET = (process.env.MESSENGER_APP_SECRET) ? 
   process.env.MESSENGER_APP_SECRET :
