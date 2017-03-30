@@ -28,7 +28,7 @@ request('https://redditmemer-3cde1.firebaseio.com/leagueoflegends/doc_count.json
   console.log('error:', error); // Print the error if one occurred
   console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
   console.log('body:', body);
-});)
+});
 
 /*
  * Be sure to setup your config values before running this code. You can 
