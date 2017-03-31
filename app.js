@@ -867,11 +867,38 @@ function addGreetingText() {
     }
   });
 }
+
+function addGetStartedButton() {
+  request({
+    uri: 'https://graph.facebook.com/v2.6/me/thread_settings',
+    qs: { 
+      access_token: PAGE_ACCESS_TOKEN,
+    },
+    method: 'POST',
+    json: {
+      setting_type: "call_to_actions",
+      thread_state: "new_thread",
+      call_to_actions: [
+        {
+          "payload": "GET_STARTED"
+        }
+      ]
+    }
+  }, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      console.log("Success: GET STARTED BUTTON set.");
+     } else {
+      console.log('Cannot set GET STARTED BUTTON');
+      console.error("Error in setting Get Started button: ", response.statusCode, response.statusMessage, body.error);
+    }
+  });
+}
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
 // certificate authority.
 app.listen(app.get('port'), function() {
   addGreetingText();
+  addGetStartedButton();
   console.log('Node app is running on port', app.get('port'));
 });
 
