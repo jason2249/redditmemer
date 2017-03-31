@@ -16,7 +16,10 @@ const
   crypto = require('crypto'),
   express = require('express'),
   https = require('https'),  
-  request = require('request');
+  request = require('request'),
+  promise = require('promise'),
+  rp = require('request-promise'),
+  dbUrl = 'https://redditmemer-3cde1.firebaseio.com';
 
 var app = express();
 app.set('port', process.env.PORT || 5000);
@@ -24,11 +27,6 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
 
-request('https://redditmemer-3cde1.firebaseio.com/leagueoflegends/doc_count.json', function (error, response, body) {
-  console.log('error:', error); // Print the error if one occurred
-  console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-  console.log('body:', body);
-});
 
 /*
  * Be sure to setup your config values before running this code. You can 
@@ -833,10 +831,47 @@ function callSendAPI(messageData) {
   });  
 }
 
+function test() {
+  var sentence = ["vayne", "world"];
+  var res = 0;
+  var promises = []
+    for (var i = 0; i < 2; i++) {
+      promises.push(rp(dbUrl + '/leagueoflegends/word_freqs/' + sentence[i] + '.json'));
+    }
+    Promise.all(promises).then(function(values) {
+      console.log(values);
+    }, function(err) {
+      console.log(err);
+    });
+}
+
+function addGreetingText() {
+  request({
+    uri: 'https://graph.facebook.com/v2.6/me/thread_settings',
+    qs: { 
+      access_token: PAGE_ACCESS_TOKEN,
+    },
+    method: 'POST',
+    json: {
+      setting_type: "greeting",
+      greeting: {
+        text: "H-hi there {{user_first_name}}-senpai.. P-please notice me!!"
+      }
+    }
+  }, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      console.log("Success: Greeting text set.");
+     } else {
+      console.log('Setting greeting text FAILED.');
+      console.error("Error in setting greeting text: ", response.statusCode, response.statusMessage, body.error);
+    }
+  });
+}
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
 // certificate authority.
 app.listen(app.get('port'), function() {
+  addGreetingText();
   console.log('Node app is running on port', app.get('port'));
 });
 
