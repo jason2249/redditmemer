@@ -387,10 +387,10 @@ function introduce(senderID) {
     setTimeout(function() {
       sendTextMessage(senderID, "My job is to show you the wonders of a simply breathtaking site called reddit.com, " +
         "full of enlightened and intellectual redditors, such as myself.");
-    }, 1000);
-    setTimeout(function() {
-      sendTextMessage(senderID, "Simply answer some of my questions and I'll recommend you some highly thought-provoking " +
-        "new subreddits using my MACHINE LEARNING (TM) algorithms!");
+      setTimeout(function() {
+        sendTextMessage(senderID, "Simply answer some of my questions and I'll recommend you some highly thought-provoking " +
+          "new subreddits using my MACHINE LEARNING (TM) algorithms!");
+      }, 1000);
     }, 1000);
   });
 }
