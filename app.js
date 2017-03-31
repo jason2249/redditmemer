@@ -373,6 +373,7 @@ function receivedPostback(event) {
 
 function introduce(senderID) {
   rp("https://graph.facebook.com/v2.6/" + senderID + "?access_token=" + PAGE_ACCESS_TOKEN).then(function(res) {
+    res = JSON.parse(res);
     var greetingName = "";
     console.log(res["gender"]);
     if (res["gender"] == "male") {
