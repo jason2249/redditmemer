@@ -373,7 +373,6 @@ function receivedPostback(event) {
 
 function introduce(senderID) {
   rp("https://graph.facebook.com/v2.6/" + senderID + "?access_token=" + PAGE_ACCESS_TOKEN).then(function(res) {
-    console.log(res);
     var greetingName = "";
     if (res["gender"] == "male") {
       greetingName = "m'good sir";
@@ -382,7 +381,8 @@ function introduce(senderID) {
     } else {
       greetingName = res["first_name"];
     }
-    sendTextMessage(senderID, "Greetings " + greetingName + "! I am delighted to make your acquaintance.");
+    var greeting = "Greetings " + greetingName + "! I am delighted to make your acquaintance.";
+    sendTextMessage(senderID, greeting);
   });
 }
 /*
