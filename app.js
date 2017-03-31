@@ -374,6 +374,7 @@ function receivedPostback(event) {
 function introduce(senderID) {
   rp("https://graph.facebook.com/v2.6/" + senderID + "?access_token=" + PAGE_ACCESS_TOKEN).then(function(res) {
     var greetingName = "";
+    console.log(res["gender"]);
     if (res["gender"] == "male") {
       greetingName = "m'good sir";
     } else if (res["gender"] == "female") {
@@ -381,6 +382,7 @@ function introduce(senderID) {
     } else {
       greetingName = res["first_name"];
     }
+    console.log(greetingName);
     var greeting = "Greetings " + greetingName + "! I am delighted to make your acquaintance.";
     sendTextMessage(senderID, greeting);
   });
