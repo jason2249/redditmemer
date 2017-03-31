@@ -855,7 +855,7 @@ function addGreetingText() {
     json: {
       setting_type: "greeting",
       greeting: {
-        text: "H-hi there {{user_first_name}}-senpai.. P-please notice me!!"
+        text: "H-hi there {{user_first_name}}-senpai.. please notice me!"
       }
     }
   }, function (error, response, body) {
@@ -864,26 +864,6 @@ function addGreetingText() {
      } else {
       console.log('Setting greeting text FAILED.');
       console.error("Error in setting greeting text: ", response.statusCode, response.statusMessage, body.error);
-    }
-  });
-}
-
-function removeGreetingText() {
-  request({
-    uri: 'https://graph.facebook.com/v2.6/me/thread_settings',
-    qs: { 
-      access_token: PAGE_ACCESS_TOKEN,
-    },
-    method: 'DELETE',
-    json: {
-      setting_type: "greeting"
-    }
-  }, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      _log("Greeting text removed.")
-     } else {
-      _log('Setting greeting text FAILED.');
-      console.error("Error in removing greeting text: ", response.statusCode, response.statusMessage, body.error);
     }
   });
 }
@@ -917,7 +897,7 @@ function addGetStartedButton() {
 // Webhooks must be available via SSL with a certificate signed by a valid 
 // certificate authority.
 app.listen(app.get('port'), function() {
-  removeGreetingText();
+  addGreetingText();
   addGetStartedButton();
   console.log('Node app is running on port', app.get('port'));
 });
