@@ -385,12 +385,12 @@ function introduce(senderID) {
     var greeting = "Greetings " + greetingName + "! I am delighted to make your acquaintance.";
     sendTextMessage(senderID, greeting);
     setTimeout(function() {
-      sendTextMessage(senderID, "My job is to show you the wonders of a simply breathtaking site called reddit.com, full of 
-        enlightened and intellectual redditors, such as myself.");
+      sendTextMessage(senderID, "My job is to show you the wonders of a simply breathtaking site called reddit.com, " +
+        "full of enlightened and intellectual redditors, such as myself.");
     }, 1000);
     setTimeout(function() {
-      sendTextMessage(senderID, "Simply answer some of my questions and I'll recommend you some highly thought-provoking
-        new subreddits using my MACHINE LEARNING (TM) algorithms!");
+      sendTextMessage(senderID, "Simply answer some of my questions and I'll recommend you some highly thought-provoking " +
+        "new subreddits using my MACHINE LEARNING (TM) algorithms!");
     }, 1000);
   });
 }
