@@ -375,7 +375,6 @@ function introduce(senderID) {
   rp("https://graph.facebook.com/v2.6/" + senderID + "?access_token=" + PAGE_ACCESS_TOKEN).then(function(res) {
     res = JSON.parse(res);
     var greetingName = "";
-    console.log(res["gender"]);
     if (res["gender"] == "male") {
       greetingName = "m'good sir";
     } else if (res["gender"] == "female") {
@@ -383,9 +382,16 @@ function introduce(senderID) {
     } else {
       greetingName = res["first_name"];
     }
-    console.log(greetingName);
     var greeting = "Greetings " + greetingName + "! I am delighted to make your acquaintance.";
     sendTextMessage(senderID, greeting);
+    setTimeout(function() {
+      sendTextMessage(senderID, "My job is to show you the wonders of a simply breathtaking site called reddit.com, full of 
+        enlightened and intellectual redditors, such as myself.");
+    }, 1000);
+    setTimeout(function() {
+      sendTextMessage(senderID, "Simply answer some of my questions and I'll recommend you some highly thought-provoking
+        new subreddits using my MACHINE LEARNING (TM) algorithms!");
+    }, 1000);
   });
 }
 /*
