@@ -20,7 +20,17 @@ const
   promise = require('promise'),
   rp = require('request-promise'),
   fs = require('fs'),
+  firebase = require('firebase'),
   dbUrl = 'https://redditmemer-3cde1.firebaseio.com';
+
+var conf = {
+  apiKey: "AIzaSyCSyeqQtwg4iht9BVC6CCDJr2kdm6P8yyM",
+  authDomain: "https://redditmemer-3cde1.firebaseapp.com",
+  databaseURL: "https://redditmemer-3cde1.firebaseio.com",
+  storageBucket: "redditmemer-3cde1.appspot.com",
+};
+firebase.initializeApp(conf);
+var subreddits = firebase.database().ref("/");
 
 var app = express();
 app.set('port', process.env.PORT || 5000);
@@ -270,7 +280,14 @@ function receivedMessage(event) {
 
 function getBestSubreddit(messageText) {
   var user_words = parse_message(messageText);
-  console.log(user_words);
+  var top_subreddit = "";
+  var top_score = Number.MIN_SAFE_INTEGER;
+  subreddits.once("value").then(function(snapshot) {
+    snapshot.forEach(function(childSnapshot) {
+      var subreddit = childSnapshot.key;
+      console.log(subreddit);
+    })
+  })
   return "";
 }
 
@@ -373,7 +390,7 @@ function introduce(senderID) {
         sendTextMessage(senderID, "Simply answer some of my questions and I'll recommend you some highly thought-provoking " +
           "new subreddits using my MACHINE LEARNING (TM) algorithms!");
         askFirstQuestion(senderID);
-      }, 2000);
+      }, 4000);
     }, 2000);
   });
 }
@@ -382,7 +399,7 @@ function askFirstQuestion(senderID) {
    messageCount = 0;
    setTimeout(function() {
     sendTextMessage(senderID, "To start off, tell me about what you like to do in your free time!");
-   }, 2000);
+   }, 4000);
 }
 /*
  * Message Read Event
