@@ -19,6 +19,7 @@ const
   request = require('request'),
   promise = require('promise'),
   rp = require('request-promise'),
+  fs = require('fs'),
   dbUrl = 'https://redditmemer-3cde1.firebaseio.com';
 
 var app = express();
@@ -28,7 +29,8 @@ app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
 
 var messageCount = 0;
-
+var stopwords = [];
+var best_subreddits = [];
 /*
  * Be sure to setup your config values before running this code. You can 
  * set them using environment variables or modifying the config file in /config.
@@ -255,15 +257,43 @@ function receivedMessage(event) {
   }
 
   if (messageText) {
-    console.log(messageCount);
-    messageCount++;
+    if (messageCount == 0) {
+      var best_subreddit = getBestSubreddit(messageText);
+      best_subreddits.push(best_subreddit);
+      messageCount++;
+    }
   } else if (messageAttachments) {
     //send u wot m8.jpg
     sendTextMessage(senderID, "Message with attachment received");
   }
 }
 
+function getBestSubreddit(messageText) {
+  var user_words = parse_message(messageText);
 
+
+}
+
+function parse_message(messageText) {
+  var user_words = messageText.toLowerCase();
+  user_words = user_words.split(" ");
+  for (var i = 0; i < user_words.length; i++) {
+    user_words[i] = user_words[i].replace(/[^A-Za-z0-9]/g, "");
+  }
+}
+function test() {
+  var sentence = ["vayne", "world"];
+  var res = 0;
+  var promises = []
+    for (var i = 0; i < 2; i++) {
+      promises.push(rp(dbUrl + '/leagueoflegends/word_freqs/' + sentence[i] + '.json'));
+    }
+    Promise.all(promises).then(function(values) {
+      console.log(values);
+    }, function(err) {
+      console.log(err);
+    });
+}
 /*
  * Delivery Confirmation Event
  *
@@ -341,6 +371,7 @@ function introduce(senderID) {
 }
 
 function askFirstQuestion(senderID) {
+   messageCount = 0;
    setTimeout(function() {
     sendTextMessage(senderID, "To start off, tell me about what you like to do in your free time!");
    }, 2000);
@@ -806,74 +837,16 @@ function callSendAPI(messageData) {
   });  
 }
 
-function test() {
-  var sentence = ["vayne", "world"];
-  var res = 0;
-  var promises = []
-    for (var i = 0; i < 2; i++) {
-      promises.push(rp(dbUrl + '/leagueoflegends/word_freqs/' + sentence[i] + '.json'));
-    }
-    Promise.all(promises).then(function(values) {
-      console.log(values);
-    }, function(err) {
-      console.log(err);
-    });
+function makeStopWordSet() {
+  stopwords = new Set(fs.readFileSync('englishstop.txt').toString().split("\n"));
 }
 
-function addGreetingText() {
-  request({
-    uri: 'https://graph.facebook.com/v2.6/me/thread_settings',
-    qs: { 
-      access_token: PAGE_ACCESS_TOKEN,
-    },
-    method: 'POST',
-    json: {
-      setting_type: "greeting",
-      greeting: {
-        text: "H-hi there {{user_first_name}}-senpai.. please notice me!"
-      }
-    }
-  }, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      console.log("Success: Greeting text set.");
-     } else {
-      console.log('Setting greeting text FAILED.');
-      console.error("Error in setting greeting text: ", response.statusCode, response.statusMessage, body.error);
-    }
-  });
-}
-
-function addGetStartedButton() {
-  request({
-    uri: 'https://graph.facebook.com/v2.6/me/thread_settings',
-    qs: { 
-      access_token: PAGE_ACCESS_TOKEN,
-    },
-    method: 'POST',
-    json: {
-      setting_type: "call_to_actions",
-      thread_state: "new_thread",
-      call_to_actions: [
-        {
-          "payload": "GET_STARTED"
-        }
-      ]
-    }
-  }, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      console.log("Success: GET STARTED BUTTON set.");
-     } else {
-      console.log('Cannot set GET STARTED BUTTON');
-      console.error("Error in setting Get Started button: ", response.statusCode, response.statusMessage, body.error);
-    }
-  });
-}
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
 // certificate authority.
 app.listen(app.get('port'), function() {
-  addGreetingText();
-  addGetStartedButton();
+  makeStopWordSet();
+  console.log(stopwords.has('whoever'));
   console.log('Node app is running on port', app.get('port'));
 });
 
