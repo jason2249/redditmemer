@@ -21,6 +21,9 @@ const
   rp = require('request-promise'),
   fs = require('fs'),
   firebase = require('firebase'),
+  Promise = require('bluebird'),
+  num_types = 959198,
+  num_docs = 3490408,
   dbUrl = 'https://redditmemer-3cde1.firebaseio.com';
 
 var conf = {
@@ -284,24 +287,24 @@ function getBestSubreddit(messageText) {
   var top_score = Number.MIN_SAFE_INTEGER;
   rp(dbUrl + '/.json?shallow=true').then(function(res) {
     res = JSON.parse(res);
+    var urls = [];
     for (var subreddit in res) {
       if (res.hasOwnProperty(subreddit)) {
-        var score = 0.0;
-        var promises = []
         for (var i = 0; i < user_words.length; i++) {
-          promises.push(rp(dbUrl + '/' + subreddit + '/word_freqs/' + user_words[i] + '.json'));
+          urls.push(dbUrl + '/' + subreddit + '/word_freqs/' + user_words[i] + '.json');
         }
-        Promise.all(promises).then(function(values) {
-          console.log(values);
-        }, function(err) {
-          console.log(err);
-        });
+        urls.push(dbUrl + '/' + subreddit + '/word_count.json');
+        urls.push(dbUrl + '/' + subreddit + '/doc_count.json');
       }
     }
+    return Promise.map(urls, function(url) {
+        return rp(url);
+    }, {concurrency: 20}).then(function(allResults) {
+        console.log(allResults);
+    });
   }).catch(function(err) {
     console.log(err);
-  })
-  return "";
+  });
 }
 
 function parse_message(messageText) {
