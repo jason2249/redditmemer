@@ -286,7 +286,16 @@ function getBestSubreddit(messageText) {
     res = JSON.parse(res);
     for (var subreddit in res) {
       if (res.hasOwnProperty(subreddit)) {
-        console.log(subreddit);
+        var score = 0.0;
+        var promises = []
+        for (var i = 0; i < user_words.length; i++) {
+          promises.push(rp(dbUrl + '/' + subreddit + '/word_freqs/' + user_words[i] + '.json'));
+        }
+        Promise.all(promises).then(function(values) {
+          console.log(values);
+        }, function(err) {
+          console.log(err);
+        });
       }
     }
   }).catch(function(err) {
@@ -308,20 +317,6 @@ function parse_message(messageText) {
     }
   }
   return final_words
-}
-
-function test() {
-  var sentence = ["vayne", "world"];
-  var res = 0;
-  var promises = []
-    for (var i = 0; i < 2; i++) {
-      promises.push(rp(dbUrl + '/leagueoflegends/word_freqs/' + sentence[i] + '.json'));
-    }
-    Promise.all(promises).then(function(values) {
-      console.log(values);
-    }, function(err) {
-      console.log(err);
-    });
 }
 /*
  * Delivery Confirmation Event
