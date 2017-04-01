@@ -282,7 +282,7 @@ function parse_message(messageText) {
   }
   var final_words = [];
   for (var i = 0; i < user_words.length; i++) {
-    if (!stopwords.has(user_words[i]) || user_words[i] != "") {
+    if (!stopwords.has(user_words[i]) && user_words[i] != "") {
       final_words.push(user_words[i]);
     }
   }
