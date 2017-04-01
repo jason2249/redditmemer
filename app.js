@@ -283,7 +283,12 @@ function getBestSubreddit(messageText) {
   var top_subreddit = "";
   var top_score = Number.MIN_SAFE_INTEGER;
   rp(dbUrl + '/.json?shallow=true').then(function(res) {
-    console.log(res);
+    res = JSON.parse(res);
+    for (var subreddit in res) {
+      if (res.hasOwnProperty(subreddit)) {
+        console.log(subreddit);
+      }
+    }
   }).catch(function(err) {
     console.log(err);
   })
