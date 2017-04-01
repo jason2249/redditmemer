@@ -27,6 +27,7 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
 
+var messageCount = 0;
 
 /*
  * Be sure to setup your config values before running this code. You can 
@@ -254,67 +255,11 @@ function receivedMessage(event) {
   }
 
   if (messageText) {
-
-    // If we receive a text message, check to see if it matches any special
-    // keywords and send back the corresponding example. Otherwise, just echo
-    // the text we received.
-    switch (messageText) {
-      case 'image':
-        sendImageMessage(senderID);
-        break;
-
-      case 'gif':
-        sendGifMessage(senderID);
-        break;
-
-      case 'audio':
-        sendAudioMessage(senderID);
-        break;
-
-      case 'video':
-        sendVideoMessage(senderID);
-        break;
-
-      case 'file':
-        sendFileMessage(senderID);
-        break;
-
-      case 'button':
-        sendButtonMessage(senderID);
-        break;
-
-      case 'generic':
-        sendGenericMessage(senderID);
-        break;
-
-      case 'receipt':
-        sendReceiptMessage(senderID);
-        break;
-
-      case 'quick reply':
-        sendQuickReply(senderID);
-        break;        
-
-      case 'read receipt':
-        sendReadReceipt(senderID);
-        break;        
-
-      case 'typing on':
-        sendTypingOn(senderID);
-        break;        
-
-      case 'typing off':
-        sendTypingOff(senderID);
-        break;        
-
-      case 'account linking':
-        sendAccountLinking(senderID);
-        break;
-
-      default:
-        sendTextMessage(senderID, messageText);
+    console.log(messageCount);
+    messageCount++;
     }
   } else if (messageAttachments) {
+    //send u wot m8.jpg
     sendTextMessage(senderID, "Message with attachment received");
   }
 }
@@ -386,13 +331,20 @@ function introduce(senderID) {
     sendTextMessage(senderID, greeting);
     setTimeout(function() {
       sendTextMessage(senderID, "My job is to show you the wonders of a simply breathtaking site called reddit.com, " +
-        "full of enlightened and intellectual redditors, such as myself.");
+        "full of enlightened and intellectual redditors such as myself.");
       setTimeout(function() {
         sendTextMessage(senderID, "Simply answer some of my questions and I'll recommend you some highly thought-provoking " +
           "new subreddits using my MACHINE LEARNING (TM) algorithms!");
-      }, 1000);
-    }, 1000);
+        askFirstQuestion(senderID);
+      }, 2000);
+    }, 2000);
   });
+}
+
+function askFirstQuestion(senderID) {
+   setTimeout(function() {
+    sendTextMessage(senderID, "To start off, tell me about what you like to do in your free time!");
+   }, 2000);
 }
 /*
  * Message Read Event
