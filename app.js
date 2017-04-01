@@ -270,8 +270,8 @@ function receivedMessage(event) {
 
 function getBestSubreddit(messageText) {
   var user_words = parse_message(messageText);
-
-
+  console.log(user_words);
+  return "";
 }
 
 function parse_message(messageText) {
@@ -280,7 +280,15 @@ function parse_message(messageText) {
   for (var i = 0; i < user_words.length; i++) {
     user_words[i] = user_words[i].replace(/[^A-Za-z0-9]/g, "");
   }
+  var final_words = [];
+  for (var i = 0; i < user_words.length; i++) {
+    if (!stopwords.has(user_words[i]) || user_words[i] != "") {
+      final_words.push(user_words[i]);
+    }
+  }
+  return final_words
 }
+
 function test() {
   var sentence = ["vayne", "world"];
   var res = 0;
@@ -846,7 +854,6 @@ function makeStopWordSet() {
 // certificate authority.
 app.listen(app.get('port'), function() {
   makeStopWordSet();
-  console.log(stopwords.has('whoever'));
   console.log('Node app is running on port', app.get('port'));
 });
 
