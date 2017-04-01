@@ -257,7 +257,6 @@ function receivedMessage(event) {
   if (messageText) {
     console.log(messageCount);
     messageCount++;
-    }
   } else if (messageAttachments) {
     //send u wot m8.jpg
     sendTextMessage(senderID, "Message with attachment received");
