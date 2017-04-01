@@ -282,11 +282,10 @@ function getBestSubreddit(messageText) {
   var user_words = parse_message(messageText);
   var top_subreddit = "";
   var top_score = Number.MIN_SAFE_INTEGER;
-  subreddits.once("value").then(function(snapshot) {
-    snapshot.forEach(function(childSnapshot) {
-      var subreddit = childSnapshot.key;
-      console.log(subreddit);
-    })
+  rp(dbUrl + '/.json?shallow=true').then(function(res) {
+    console.log(res);
+  }).catch(function(err) {
+    console.log(err);
   })
   return "";
 }
