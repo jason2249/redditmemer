@@ -26,15 +26,6 @@ const
   num_docs = 3490408,
   dbUrl = 'https://redditmemer-3cde1.firebaseio.com';
 
-var conf = {
-  apiKey: "AIzaSyCSyeqQtwg4iht9BVC6CCDJr2kdm6P8yyM",
-  authDomain: "https://redditmemer-3cde1.firebaseapp.com",
-  databaseURL: "https://redditmemer-3cde1.firebaseio.com",
-  storageBucket: "redditmemer-3cde1.appspot.com",
-};
-firebase.initializeApp(conf);
-var subreddits = firebase.database().ref("/");
-
 var app = express();
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
@@ -44,6 +35,7 @@ app.use(express.static('public'));
 var messageCount = 0;
 var stopwords = [];
 var best_subreddits = [];
+var subredditData = {};
 /*
  * Be sure to setup your config values before running this code. You can 
  * set them using environment variables or modifying the config file in /config.
@@ -907,11 +899,41 @@ function makeStopWordSet() {
   stopwords = new Set(fs.readFileSync('englishstop.txt').toString().split("\n"));
 }
 
+function makeData() {
+  rp(dbUrl + '/.json?shallow=true').then(function(res) {
+    res = JSON.parse(res);
+    var urls = [];
+    var subreddits = [];
+    for (var subreddit in res) {
+      if (res.hasOwnProperty(subreddit)) {
+        subreddits.push(subreddit);
+        urls.push(dbUrl + '/' + subreddit + '/.json');
+      }
+    }
+    Promise.map(urls, function(url) {
+        return rp(url);
+    }, {concurrency: 20}).then(function(allResults) {
+        parseIntoData(allResults, subreddits);
+    });
+  }).catch(function(err) {
+    console.log(err);
+  });
+}
+
+function parseIntoData(allResults, subreddits) {
+  for (var i = 0; i < allResults.length; i++) {
+    subredditData[subreddits[i]] = JSON.parse(allResults[i]);
+  }
+  console.log("Finished reading!");
+  console.log(subredditData["leagueoflegends"]);
+}
+
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
 // certificate authority.
 app.listen(app.get('port'), function() {
   makeStopWordSet();
+  makeData();
   console.log('Node app is running on port', app.get('port'));
 });
 
