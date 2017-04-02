@@ -36,6 +36,7 @@ var messageCount = 0;
 var stopwords = [];
 var best_subreddits = [];
 var subredditData = {};
+var subreddits = [];
 /*
  * Be sure to setup your config values before running this code. You can 
  * set them using environment variables or modifying the config file in /config.
@@ -275,41 +276,15 @@ function receivedMessage(event) {
 
 function getBestSubreddit(messageText, senderID) {
   var user_words = parse_message(messageText);
-  rp(dbUrl + '/.json?shallow=true').then(function(res) {
-    res = JSON.parse(res);
-    var urls = [];
-    var subreddits = [];
-    for (var subreddit in res) {
-      if (res.hasOwnProperty(subreddit)) {
-        subreddits.push(subreddit);
-        for (var i = 0; i < user_words.length; i++) {
-          urls.push(dbUrl + '/' + subreddit + '/word_freqs/' + user_words[i] + '.json');
-        }
-        urls.push(dbUrl + '/' + subreddit + '/word_count.json');
-        urls.push(dbUrl + '/' + subreddit + '/doc_count.json');
-      }
-    }
-    return Promise.map(urls, function(url) {
-        return rp(url);
-    }, {concurrency: 200}).then(function(allResults) {
-        return calcBestSubreddit(allResults, user_words.length, subreddits, senderID);
-    });
-  }).catch(function(err) {
-    console.log(err);
-  });
-}
-
-function calcBestSubreddit(allResults, len_user_words, subreddits, senderID) {
   var top_score = Number.MIN_SAFE_INTEGER;
   var top_subreddit = "";
-  var sub_count = 0;
-  allResults = parseResults(allResults);
-  for(var i = 0; i < allResults.length; i += (len_user_words+2)) {
+  for (var i = 0; i < subreddits.length; i++) {
+    var subreddit = subredditData[subreddits[i]];
     var score = 0.0;
-    var word_count = allResults[i+len_user_words];
-    var doc_count = allResults[i+len_user_words+1];
-    for (var word_index = i; word_index < (i+len_user_words); word_index++) {
-      if (allResults[word_index] > 0) {
+    var word_count = subreddit["word_count"];
+    var doc_count = subreddit["doc_count"];
+    for (var word_index = 0; word_index < user_words.length; word_index++) {
+      if (user_words[word_index] in subreddit["word_freqs"]) {
         score += Math.log(allResults[word_index]);
       } else {
         score += Math.log(1);
@@ -322,10 +297,62 @@ function calcBestSubreddit(allResults, len_user_words, subreddits, senderID) {
       top_score = score;
       top_subreddit = subreddits[sub_count];
     }
-    sub_count++;
   }
   sendTextMessage(senderID, top_subreddit);
 }
+// function getBestSubreddit(messageText, senderID) {
+//   var user_words = parse_message(messageText);
+//   rp(dbUrl + '/.json?shallow=true').then(function(res) {
+//     res = JSON.parse(res);
+//     var urls = [];
+//     var subreddits = [];
+//     for (var subreddit in res) {
+//       if (res.hasOwnProperty(subreddit)) {
+//         subreddits.push(subreddit);
+//         for (var i = 0; i < user_words.length; i++) {
+//           urls.push(dbUrl + '/' + subreddit + '/word_freqs/' + user_words[i] + '.json');
+//         }
+//         urls.push(dbUrl + '/' + subreddit + '/word_count.json');
+//         urls.push(dbUrl + '/' + subreddit + '/doc_count.json');
+//       }
+//     }
+//     return Promise.map(urls, function(url) {
+//         return rp(url);
+//     }, {concurrency: 200}).then(function(allResults) {
+//         return calcBestSubreddit(allResults, user_words.length, subreddits, senderID);
+//     });
+//   }).catch(function(err) {
+//     console.log(err);
+//   });
+// }
+
+// function calcBestSubreddit(allResults, len_user_words, subreddits, senderID) {
+//   var top_score = Number.MIN_SAFE_INTEGER;
+//   var top_subreddit = "";
+//   var sub_count = 0;
+//   allResults = parseResults(allResults);
+//   for(var i = 0; i < allResults.length; i += (len_user_words+2)) {
+//     var score = 0.0;
+//     var word_count = allResults[i+len_user_words];
+//     var doc_count = allResults[i+len_user_words+1];
+//     for (var word_index = i; word_index < (i+len_user_words); word_index++) {
+//       if (allResults[word_index] > 0) {
+//         score += Math.log(allResults[word_index]);
+//       } else {
+//         score += Math.log(1);
+//       }
+//       score -= Math.log(word_count + num_types);
+//     }
+//     score += Math.log(num_docs);
+//     score -= Math.log(doc_count);
+//     if (score > top_score) {
+//       top_score = score;
+//       top_subreddit = subreddits[sub_count];
+//     }
+//     sub_count++;
+//   }
+//   sendTextMessage(senderID, top_subreddit);
+// }
 
 function parseResults(allResults) {
   for (var i = 0; i < allResults.length; i++) {
@@ -903,7 +930,6 @@ function makeData() {
   rp(dbUrl + '/.json?shallow=true').then(function(res) {
     res = JSON.parse(res);
     var urls = [];
-    var subreddits = [];
     for (var subreddit in res) {
       if (res.hasOwnProperty(subreddit)) {
         subreddits.push(subreddit);
@@ -912,15 +938,15 @@ function makeData() {
     }
     Promise.map(urls, function(url) {
         return rp(url);
-    }, {concurrency: 1}).then(function(allResults) {
-        parseIntoData(allResults, subreddits);
+    }, {concurrency: 2}).then(function(allResults) {
+        parseIntoData(allResults);
     });
   }).catch(function(err) {
     console.log(err);
   });
 }
 
-function parseIntoData(allResults, subreddits) {
+function parseIntoData(allResults) {
   for (var i = 0; i < allResults.length; i++) {
     subredditData[subreddits[i]] = JSON.parse(allResults[i]);
   }
