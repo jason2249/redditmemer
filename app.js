@@ -281,30 +281,63 @@ function receivedMessage(event) {
   }
 }
 
+// function getBestSubreddit(messageText) {
+//   var user_words = parse_message(messageText);
+//   var top_subreddit = "";
+//   var top_score = Number.MIN_SAFE_INTEGER;
+//   rp(dbUrl + '/.json?shallow=true').then(function(res) {
+//     res = JSON.parse(res);
+//     var urls = [];
+//     for (var subreddit in res) {
+//       if (res.hasOwnProperty(subreddit)) {
+//         for (var i = 0; i < user_words.length; i++) {
+//           urls.push(dbUrl + '/' + subreddit + '/word_freqs/' + user_words[i] + '.json');
+//         }
+//         urls.push(dbUrl + '/' + subreddit + '/word_count.json');
+//         urls.push(dbUrl + '/' + subreddit + '/doc_count.json');
+//       }
+//     }
+//     return Promise.map(urls, function(url) {
+//         return rp(url);
+//     }, {concurrency: 300}).then(function(allResults) {
+//         console.log(allResults);
+//     });
+//   }).catch(function(err) {
+//     console.log(err);
+//   });
+// }
+
 function getBestSubreddit(messageText) {
-  var user_words = parse_message(messageText);
-  var top_subreddit = "";
-  var top_score = Number.MIN_SAFE_INTEGER;
-  rp(dbUrl + '/.json?shallow=true').then(function(res) {
-    res = JSON.parse(res);
-    var urls = [];
-    for (var subreddit in res) {
-      if (res.hasOwnProperty(subreddit)) {
-        for (var i = 0; i < user_words.length; i++) {
-          urls.push(dbUrl + '/' + subreddit + '/word_freqs/' + user_words[i] + '.json');
-        }
-        urls.push(dbUrl + '/' + subreddit + '/word_count.json');
-        urls.push(dbUrl + '/' + subreddit + '/doc_count.json');
-      }
-    }
-    return Promise.map(urls, function(url) {
-        return rp(url);
-    }, {concurrency: 300}).then(function(allResults) {
-        console.log(allResults);
+    return getSubreddits(messageText).then(function(results) {
+        console.log(results[0]);
+    }).catch(function(error) {
+        console.log(error);
     });
-  }).catch(function(err) {
-    console.log(err);
-  });
+}
+
+function getSubreddits(messageText) {
+    var user_words = parse_message(messageText);
+    return rp(dbUrl + '/.json?shallow=true').then(function(res) {
+        var subreddits = Object.keys(JSON.parse(res));
+        return subreddits.reduce(function(p, subreddit) {
+            return p.then(function() {
+                return Promise.map(user_words, function(word) {
+                    return rp(dbUrl + '/' + subreddit + '/word_freqs/' + word + '.json');
+                }, {concurrency: 10}).then(function(freqs) {
+                    rp(dbUrl + '/' + subreddit + '/word_count.json').then(function(count) {
+                      rp(dbUrl + '/' + subreddit + '/doc_count.json').then(function(doc) {
+                        return {
+                        'subreddit': subreddit, // or maybe the object for which `subreddit` is the key?
+                        'word_freqs': freqs,
+                        'doc_count': doc,
+                        'word_count': count
+                        };
+                      })
+                    });
+                });
+            });
+        }, Promise.resolve());
+    });
 }
 
 function parse_message(messageText) {
