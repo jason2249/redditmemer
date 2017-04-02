@@ -912,7 +912,7 @@ function makeData() {
     }
     Promise.map(urls, function(url) {
         return rp(url);
-    }, {concurrency: 5}).then(function(allResults) {
+    }, {concurrency: 1}).then(function(allResults) {
         parseIntoData(allResults, subreddits);
     });
   }).catch(function(err) {
