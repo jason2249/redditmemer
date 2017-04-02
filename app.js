@@ -311,13 +311,14 @@ function calcBestSubreddit(allResults, len_user_words, subreddits, senderID) {
   var top_score = Number.MIN_SAFE_INTEGER;
   var top_subreddit = "";
   var sub_count = 0;
+  allResults = parseResults(allResults);
   for(var i = 0; i < allResults.length; i += (len_user_words+2)) {
     var score = 0.0;
-    var word_count = parseInt(allResults[i+len_user_words]);
-    var doc_count = parseInt(allResults[i+len_user_words+1]);
+    var word_count = allResults[i+len_user_words];
+    var doc_count = allResults[i+len_user_words+1];
     for (var word_index = i; word_index < (i+len_user_words); word_index++) {
-      if (allResults[word_index] != 'null') {
-        score += Math.log(parseInt(allResults[word_index]));
+      if (allResults[word_index] > 0) {
+        score += Math.log(allResults[word_index]);
       } else {
         score += Math.log(1);
       }
@@ -331,8 +332,18 @@ function calcBestSubreddit(allResults, len_user_words, subreddits, senderID) {
     }
     sub_count++;
   }
-  console.log(top_subreddit);
   sendTextMessage(senderID, top_subreddit);
+}
+
+function parseResults(allResults) {
+  for (var i = 0; i < allResults.length; i++) {
+    if (allResults[i] == 'null') {
+      allResults[i] = -1;
+    } else {
+      allResults[i] = parseInt(allResults[i]);
+    }
+  }
+  return allResults;
 }
 
 function parse_message(messageText) {
