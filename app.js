@@ -271,8 +271,7 @@ function receivedMessage(event) {
 
   if (messageText) {
     if (messageCount == 0) {
-      var best_subreddit = getBestSubreddit(messageText);
-      console.log(best_subreddit);
+      var best_subreddit = getBestSubreddit(messageText, senderID);
       best_subreddits.push(best_subreddit);
       messageCount++;
     }
@@ -282,7 +281,7 @@ function receivedMessage(event) {
   }
 }
 
-function getBestSubreddit(messageText) {
+function getBestSubreddit(messageText, senderID) {
   var user_words = parse_message(messageText);
   rp(dbUrl + '/.json?shallow=true').then(function(res) {
     res = JSON.parse(res);
@@ -301,14 +300,14 @@ function getBestSubreddit(messageText) {
     return Promise.map(urls, function(url) {
         return rp(url);
     }, {concurrency: 250}).then(function(allResults) {
-        return calcBestSubreddit(allResults, user_words.length, subreddits);
+        return calcBestSubreddit(allResults, user_words.length, subreddits, senderID);
     });
   }).catch(function(err) {
     console.log(err);
   });
 }
 
-function calcBestSubreddit(allResults, len_user_words, subreddits) {
+function calcBestSubreddit(allResults, len_user_words, subreddits, senderID) {
   var top_score = Number.MIN_SAFE_INTEGER;
   var top_subreddit = "";
   var sub_count = 0;
@@ -332,7 +331,8 @@ function calcBestSubreddit(allResults, len_user_words, subreddits) {
     }
     sub_count++;
   }
-  return top_subreddit;
+  console.log(top_subreddit);
+  sendTextMessage(senderID, top_subreddit);
 }
 
 function parse_message(messageText) {
