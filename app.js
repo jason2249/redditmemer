@@ -299,7 +299,7 @@ function getBestSubreddit(messageText) {
     }
     return Promise.map(urls, function(url) {
         return rp(url);
-    }, {concurrency: 20}).then(function(allResults) {
+    }, {concurrency: 100}).then(function(allResults) {
         console.log(allResults);
     });
   }).catch(function(err) {
