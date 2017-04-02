@@ -912,7 +912,7 @@ function makeData() {
     }
     Promise.map(urls, function(url) {
         return rp(url);
-    }, {concurrency: 20}).then(function(allResults) {
+    }, {concurrency: 10}).then(function(allResults) {
         parseIntoData(allResults, subreddits);
     });
   }).catch(function(err) {
@@ -925,7 +925,7 @@ function parseIntoData(allResults, subreddits) {
     subredditData[subreddits[i]] = JSON.parse(allResults[i]);
   }
   console.log("Finished reading!");
-  console.log(subredditData["leagueoflegends"]);
+  console.log(subredditData["leagueoflegends"]["word_count"]);
 }
 
 // Start server
