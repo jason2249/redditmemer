@@ -272,6 +272,7 @@ function receivedMessage(event) {
   if (messageText) {
     if (messageCount == 0) {
       var best_subreddit = getBestSubreddit(messageText);
+      console.log(best_subreddit);
       best_subreddits.push(best_subreddit);
       messageCount++;
     }
@@ -283,13 +284,13 @@ function receivedMessage(event) {
 
 function getBestSubreddit(messageText) {
   var user_words = parse_message(messageText);
-  var top_subreddit = "";
-  var top_score = Number.MIN_SAFE_INTEGER;
   rp(dbUrl + '/.json?shallow=true').then(function(res) {
     res = JSON.parse(res);
     var urls = [];
+    var subreddits = [];
     for (var subreddit in res) {
       if (res.hasOwnProperty(subreddit)) {
+        subreddits.push(subreddit);
         for (var i = 0; i < user_words.length; i++) {
           urls.push(dbUrl + '/' + subreddit + '/word_freqs/' + user_words[i] + '.json');
         }
@@ -300,11 +301,38 @@ function getBestSubreddit(messageText) {
     return Promise.map(urls, function(url) {
         return rp(url);
     }, {concurrency: 250}).then(function(allResults) {
-        console.log(allResults);
+        return calcBestSubreddit(allResults, user_words.length, subreddits);
     });
   }).catch(function(err) {
     console.log(err);
   });
+}
+
+function calcBestSubreddit(allResults, len_user_words, subreddits) {
+  var top_score = Number.MIN_SAFE_INTEGER;
+  var top_subreddit = "";
+  var sub_count = 0;
+  for(var i = 0; i < allResults.length; i += (len_user_words+2)) {
+    var score = 0.0;
+    var word_count = allResults[i+len_user_words];
+    var doc_count = allResults[i+len_user_words+1];
+    for (var word_index = i; word_index < (i+len_user_words); word_index++) {
+      if (allResults[word_index] != 'null') {
+        score += Math.log10(allResults[word_index])
+      } else {
+        score += Math.log10(1);
+      }
+      score -= Math.log10(word_count + num_types);
+    }
+    score += Math.log10(num_docs);
+    score -= Math.log10(doc_count);
+    if (score > top_score) {
+      top_score = score;
+      top_subreddit = subreddits[sub_count];
+    }
+    sub_count++;
+  }
+  return top_subreddit;
 }
 
 function parse_message(messageText) {
