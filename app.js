@@ -295,7 +295,7 @@ function getBestSubreddit(messageText, senderID) {
     score -= Math.log(doc_count);
     if (score > top_score) {
       top_score = score;
-      top_subreddit = subreddits[sub_count];
+      top_subreddit = subreddits[i];
     }
   }
   sendTextMessage(senderID, top_subreddit);
@@ -938,7 +938,7 @@ function makeData() {
     }
     Promise.map(urls, function(url) {
         return rp(url);
-    }, {concurrency: 2}).then(function(allResults) {
+    }, {concurrency: 5}).then(function(allResults) {
         console.log("Start parsing data!");
         parseIntoData(allResults);
     });
