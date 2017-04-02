@@ -299,7 +299,7 @@ function getBestSubreddit(messageText, senderID) {
     }
     return Promise.map(urls, function(url) {
         return rp(url);
-    }, {concurrency: 250}).then(function(allResults) {
+    }, {concurrency: 200}).then(function(allResults) {
         return calcBestSubreddit(allResults, user_words.length, subreddits, senderID);
     });
   }).catch(function(err) {
@@ -317,14 +317,15 @@ function calcBestSubreddit(allResults, len_user_words, subreddits, senderID) {
     var doc_count = allResults[i+len_user_words+1];
     for (var word_index = i; word_index < (i+len_user_words); word_index++) {
       if (allResults[word_index] != 'null') {
-        score += Math.log10(allResults[word_index])
+        score += Math.log(allResults[word_index])
       } else {
-        score += Math.log10(1);
+        console.log("Should be null: " + allResults[word_index]);
+        score += Math.log(1);
       }
-      score -= Math.log10(word_count + num_types);
+      score -= Math.log(word_count + num_types);
     }
-    score += Math.log10(num_docs);
-    score -= Math.log10(doc_count);
+    score += Math.log(num_docs);
+    score -= Math.log(doc_count);
     if (score > top_score) {
       top_score = score;
       top_subreddit = subreddits[sub_count];
