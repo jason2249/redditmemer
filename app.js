@@ -278,25 +278,28 @@ function getBestSubreddit(messageText, senderID) {
   var user_words = parse_message(messageText);
   var top_score = Number.MIN_SAFE_INTEGER;
   var top_subreddit = "";
-  for (var i = 0; i < subreddits.length; i++) {
-    var subreddit = subredditData[subreddits[i]];
-    var score = 0.0;
-    var word_count = subreddit["word_count"];
-    var doc_count = subreddit["doc_count"];
-    for (var word_index = 0; word_index < user_words.length; word_index++) {
-      if (user_words[word_index] in subreddit["word_freqs"]) {
-        score += Math.log(subreddit["word_freqs"][user_words[word_index]]);
-      } else {
-        score += Math.log(1);
+  for (var sub in subredditData) {
+    if (subredditData.hasOwnProperty(sub)) {
+      console.log("current sub:" + sub);
+      var subreddit = subredditData[sub];
+      var score = 0.0;
+      var word_count = subreddit["word_count"];
+      var doc_count = subreddit["doc_count"];
+      for (var word_index = 0; word_index < user_words.length; word_index++) {
+        if (user_words[word_index] in subreddit["word_freqs"]) {
+          score += Math.log(subreddit["word_freqs"][user_words[word_index]]);
+        } else {
+          score += Math.log(1);
+        }
+        score -= Math.log(word_count + num_types);
       }
-      score -= Math.log(word_count + num_types);
-    }
-    score += Math.log(num_docs);
-    score -= Math.log(doc_count);
-    if (score > top_score) {
-      top_score = score;
-      top_subreddit = subreddits[i];
-    }
+      score += Math.log(num_docs);
+      score -= Math.log(doc_count);
+      if (score > top_score) {
+        top_score = score;
+        top_subreddit = subreddits[i];
+      }
+    }     
   }
   sendTextMessage(senderID, top_subreddit);
 }
