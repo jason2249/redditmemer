@@ -698,8 +698,8 @@ function callSendAPI(messageData) {
     if (!error && response.statusCode == 200) {
       var recipientId = body.recipient_id;
       var messageId = body.message_id;
-      if (messageData["message"]["type"] == "template") {
-        sendTextMessage(messageData["recipient"]["id"], "What do you think of this fine subreddit?");
+      if (messageData["message"]["attachment"]["type"] == "template") {
+        sendTextMessage(messageData["recipient"]["id"], "What do you think of this fine subreddit? Here's the current top post!");
       }
       if (messageId) {
         console.log("Successfully sent message with id %s to recipient %s", 
