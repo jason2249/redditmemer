@@ -938,7 +938,7 @@ function makeData() {
     }
     Promise.map(urls, function(url) {
         return rp(url);
-    }, {concurrency: 5}).then(function(allResults) {
+    }, {concurrency: 4}).then(function(allResults) {
         console.log("Start parsing data!");
         parseIntoData(allResults);
     });
