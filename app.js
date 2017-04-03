@@ -36,7 +36,7 @@ var messageCount = 0;
 var stopwords = [];
 var best_subreddits = [];
 var subredditData = {};
-var subreddits = [];
+
 /*
  * Be sure to setup your config values before running this code. You can 
  * set them using environment variables or modifying the config file in /config.
@@ -265,12 +265,13 @@ function receivedMessage(event) {
   if (messageText) {
     if (messageCount >= 0) {
       var best_subreddit = getBestSubreddit(messageText, senderID);
+      send_subreddit(best_subreddit, senderID);
       best_subreddits.push(best_subreddit);
       messageCount++;
     }
   } else if (messageAttachments) {
-    //send u wot m8.jpg
-    sendTextMessage(senderID, "Message with attachment received");
+    sendImageMessage(senderID);
+    sendTextMessage(senderID, "Sorry, I don't know what to do with that!");
   }
 }
 
@@ -280,7 +281,6 @@ function getBestSubreddit(messageText, senderID) {
   var top_subreddit = "";
   for (var sub in subredditData) {
     if (subredditData.hasOwnProperty(sub)) {
-      console.log("current sub:" + sub);
       var subreddit = subredditData[sub];
       var score = 0.0;
       var word_count = subreddit["word_count"];
@@ -301,72 +301,7 @@ function getBestSubreddit(messageText, senderID) {
       }
     }     
   }
-  sendTextMessage(senderID, top_subreddit);
-}
-
-// function getBestSubreddit(messageText, senderID) {
-//   var user_words = parse_message(messageText);
-//   rp(dbUrl + '/.json?shallow=true').then(function(res) {
-//     res = JSON.parse(res);
-//     var urls = [];
-//     var subreddits = [];
-//     for (var subreddit in res) {
-//       if (res.hasOwnProperty(subreddit)) {
-//         subreddits.push(subreddit);
-//         for (var i = 0; i < user_words.length; i++) {
-//           urls.push(dbUrl + '/' + subreddit + '/word_freqs/' + user_words[i] + '.json');
-//         }
-//         urls.push(dbUrl + '/' + subreddit + '/word_count.json');
-//         urls.push(dbUrl + '/' + subreddit + '/doc_count.json');
-//       }
-//     }
-//     return Promise.map(urls, function(url) {
-//         return rp(url);
-//     }, {concurrency: 200}).then(function(allResults) {
-//         return calcBestSubreddit(allResults, user_words.length, subreddits, senderID);
-//     });
-//   }).catch(function(err) {
-//     console.log(err);
-//   });
-// }
-
-// function calcBestSubreddit(allResults, len_user_words, subreddits, senderID) {
-//   var top_score = Number.MIN_SAFE_INTEGER;
-//   var top_subreddit = "";
-//   var sub_count = 0;
-//   allResults = parseResults(allResults);
-//   for(var i = 0; i < allResults.length; i += (len_user_words+2)) {
-//     var score = 0.0;
-//     var word_count = allResults[i+len_user_words];
-//     var doc_count = allResults[i+len_user_words+1];
-//     for (var word_index = i; word_index < (i+len_user_words); word_index++) {
-//       if (allResults[word_index] > 0) {
-//         score += Math.log(allResults[word_index]);
-//       } else {
-//         score += Math.log(1);
-//       }
-//       score -= Math.log(word_count + num_types);
-//     }
-//     score += Math.log(num_docs);
-//     score -= Math.log(doc_count);
-//     if (score > top_score) {
-//       top_score = score;
-//       top_subreddit = subreddits[sub_count];
-//     }
-//     sub_count++;
-//   }
-//   sendTextMessage(senderID, top_subreddit);
-// }
-
-function parseResults(allResults) {
-  for (var i = 0; i < allResults.length; i++) {
-    if (allResults[i] == 'null') {
-      allResults[i] = -1;
-    } else {
-      allResults[i] = parseInt(allResults[i]);
-    }
-  }
-  return allResults;
+  return top_subreddit;
 }
 
 function parse_message(messageText) {
@@ -382,6 +317,56 @@ function parse_message(messageText) {
     }
   }
   return final_words
+}
+
+function sendSubreddit(best_subreddit, senderID) {
+  rp("https://www.reddit.com/r/" + best_subreddit + "/.json?limit=2").then(function(res) {
+    res = JSON.parse(res);
+    var postlist = res["data"]["children"];
+    var topPost = {};
+    for (var i = 0; i < 3; i++) {
+      if (!postlist[i]["data"]["stickied"]) {
+        topPost = postlist[i]["data"];
+        break;
+      }
+    }
+    var messageTitle = topPost["title"];
+    if (messageTitle.length > 80) {
+      messageTitle = messageTitle.substring(0,80);
+    }
+    var messageSubtitle = topPost["selftext"];
+    if (messageSubtitle.length > 80) {
+      messageSubtitle = messageSubtitle.substring(0,80);
+    }
+    var imgUrl = "";
+    if (topPost["is_self"]) {
+      imgUrl = SERVER_URL + "/assets/reddit-alien.png";
+    } else {
+      imgUrl = topPost["thumbnail"];
+    }
+    var linkUrl = topPost["url"];
+    var messageData = {
+      recipient :{
+        id: senderID
+      },
+      message: {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "generic",
+            elements: [{
+              title: messageTitle,
+              subtitle: messageSubtitle,
+              item_url: linkUrl,           
+              image_url: imgUrl
+            }]
+          }
+        }
+      }
+    }
+    callSendAPI(messageData);
+    sendTextMessage(senderID, "What do you think of /r/" + best_subreddit + "?");
+  });
 }
 /*
  * Delivery Confirmation Event
@@ -465,6 +450,7 @@ function askFirstQuestion(senderID) {
     sendTextMessage(senderID, "To start off, tell me about what you like to do in your free time!");
    }, 4000);
 }
+
 /*
  * Message Read Event
  *
@@ -485,25 +471,6 @@ function receivedMessageRead(event) {
 }
 
 /*
- * Account Link Event
- *
- * This event is called when the Link Account or UnLink Account action has been
- * tapped.
- * https://developers.facebook.com/docs/messenger-platform/webhook-reference/account-linking
- * 
- */
-function receivedAccountLink(event) {
-  var senderID = event.sender.id;
-  var recipientID = event.recipient.id;
-
-  var status = event.account_linking.status;
-  var authCode = event.account_linking.authorization_code;
-
-  console.log("Received account link event with for user %d with status %s " +
-    "and auth code %s ", senderID, status, authCode);
-}
-
-/*
  * Send an image using the Send API.
  *
  */
@@ -516,7 +483,7 @@ function sendImageMessage(recipientId) {
       attachment: {
         type: "image",
         payload: {
-          url: SERVER_URL + "/assets/rift.png"
+          url: SERVER_URL + "/assets/uwot.jpg"
         }
       }
     }
@@ -592,28 +559,6 @@ function sendVideoMessage(recipientId) {
 }
 
 /*
- * Send a file using the Send API.
- *
- */
-function sendFileMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "file",
-        payload: {
-          url: SERVER_URL + "/assets/test.txt"
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
  * Send a text message using the Send API.
  *
  */
@@ -627,42 +572,6 @@ function sendTextMessage(recipientId, messageText) {
       metadata: "DEVELOPER_DEFINED_METADATA"
     }
   };
-
-  callSendAPI(messageData);
-}
-
-/*
- * Send a button message using the Send API.
- *
- */
-function sendButtonMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "This is test text",
-          buttons:[{
-            type: "web_url",
-            url: "https://www.oculus.com/en-us/rift/",
-            title: "Open Web URL"
-          }, {
-            type: "postback",
-            title: "Trigger Postback",
-            payload: "DEVELOPER_DEFINED_PAYLOAD"
-          }, {
-            type: "phone_number",
-            title: "Call Phone Number",
-            payload: "+16505551234"
-          }]
-        }
-      }
-    }
-  };  
 
   callSendAPI(messageData);
 }
@@ -719,106 +628,6 @@ function sendGenericMessage(recipientId) {
 }
 
 /*
- * Send a receipt message using the Send API.
- *
- */
-function sendReceiptMessage(recipientId) {
-  // Generate a random receipt ID as the API requires a unique ID
-  var receiptId = "order" + Math.floor(Math.random()*1000);
-
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message:{
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "receipt",
-          recipient_name: "Peter Chang",
-          order_number: receiptId,
-          currency: "USD",
-          payment_method: "Visa 1234",        
-          timestamp: "1428444852", 
-          elements: [{
-            title: "Oculus Rift",
-            subtitle: "Includes: headset, sensor, remote",
-            quantity: 1,
-            price: 599.00,
-            currency: "USD",
-            image_url: SERVER_URL + "/assets/riftsq.png"
-          }, {
-            title: "Samsung Gear VR",
-            subtitle: "Frost White",
-            quantity: 1,
-            price: 99.99,
-            currency: "USD",
-            image_url: SERVER_URL + "/assets/gearvrsq.png"
-          }],
-          address: {
-            street_1: "1 Hacker Way",
-            street_2: "",
-            city: "Menlo Park",
-            postal_code: "94025",
-            state: "CA",
-            country: "US"
-          },
-          summary: {
-            subtotal: 698.99,
-            shipping_cost: 20.00,
-            total_tax: 57.67,
-            total_cost: 626.66
-          },
-          adjustments: [{
-            name: "New Customer Discount",
-            amount: -50
-          }, {
-            name: "$100 Off Coupon",
-            amount: -100
-          }]
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
- * Send a message with Quick Reply buttons.
- *
- */
-function sendQuickReply(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      text: "What's your favorite movie genre?",
-      quick_replies: [
-        {
-          "content_type":"text",
-          "title":"Action",
-          "payload":"DEVELOPER_DEFINED_PAYLOAD_FOR_PICKING_ACTION"
-        },
-        {
-          "content_type":"text",
-          "title":"Comedy",
-          "payload":"DEVELOPER_DEFINED_PAYLOAD_FOR_PICKING_COMEDY"
-        },
-        {
-          "content_type":"text",
-          "title":"Drama",
-          "payload":"DEVELOPER_DEFINED_PAYLOAD_FOR_PICKING_DRAMA"
-        }
-      ]
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
  * Send a read receipt to indicate the message has been read
  *
  */
@@ -870,33 +679,6 @@ function sendTypingOff(recipientId) {
 }
 
 /*
- * Send a message with the account linking call-to-action
- *
- */
-function sendAccountLinking(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "button",
-          text: "Welcome. Link your account.",
-          buttons:[{
-            type: "account_link",
-            url: SERVER_URL + "/authorize"
-          }]
-        }
-      }
-    }
-  };  
-
-  callSendAPI(messageData);
-}
-
-/*
  * Call the Send API. The message data goes in the body. If successful, we'll 
  * get the message id in a response 
  *
@@ -930,53 +712,21 @@ function makeStopWordSet() {
   stopwords = new Set(fs.readFileSync('englishstop.txt').toString().split("\n"));
 }
 
-// function makeData() {
-//   rp(dbUrl + '/.json?shallow=true').then(function(res) {
-//     res = JSON.parse(res);
-//     var urls = [];
-//     for (var subreddit in res) {
-//       if (res.hasOwnProperty(subreddit)) {
-//         subreddits.push(subreddit);
-//         urls.push(dbUrl + '/' + subreddit + '/.json');
-//       }
-//     }
-//     console.log("start mapping!");
-//     Promise.map(urls, function(url) {
-//         return rp(url);
-//     }, {concurrency: 4}).then(function(allResults) {
-//         console.log("Start parsing data!");
-//         parseIntoData(allResults);
-//     });
-//   }).catch(function(err) {
-//     console.log(err);
-//   });
-// }
-
-// function parseIntoData(allResults) {
-//   for (var i = 0; i < allResults.length; i++) {
-//     subredditData[subreddits[i]] = JSON.parse(allResults[i]);
-//   }
-//   console.log("Finished reading!!");
-//   console.log(subredditData["leagueoflegends"]["word_count"]);
-// }
-
 function makeData() {
-  console.log("start reading file");
+  console.log("Begin reading data file...");
   subredditData = fs.readFileSync('data.txt').toString();
-  console.log("start parsing to JSON");
+  console.log("Begin parsing result to JSON...");
   subredditData = JSON.parse(subredditData);
-  console.log("finished!");
-  console.log(subredditData["leagueoflegends"]["word_count"]);
+  console.log("Done reading data, JSON object ready!");
 }
 
 // Start server
 // Webhooks must be available via SSL with a certificate signed by a valid 
 // certificate authority.
 app.listen(app.get('port'), function() {
+  console.log('Node app is running on port', app.get('port'));
   makeStopWordSet();
   makeData();
-  console.log('Node app is running on port', app.get('port'));
 });
 
 module.exports = app;
-
