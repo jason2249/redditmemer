@@ -959,7 +959,7 @@ function makeStopWordSet() {
 
 function makeData() {
   console.log("start reading file");
-  subredditData = fs.readFileSync('englishstop.txt').toString();
+  subredditData = fs.readFileSync('data.txt').toString();
   console.log("start parsing to JSON");
   subredditData = JSON.parse(subredditData);
   console.log("finished!");
