@@ -937,6 +937,7 @@ function makeData() {
         urls.push(dbUrl + '/' + subreddit + '/.json');
       }
     }
+    console.log("start mapping!");
     Promise.map(urls, function(url) {
         return rp(url);
     }, {concurrency: 4}).then(function(allResults) {
