@@ -285,7 +285,7 @@ function getBestSubreddit(messageText, senderID) {
     var doc_count = subreddit["doc_count"];
     for (var word_index = 0; word_index < user_words.length; word_index++) {
       if (user_words[word_index] in subreddit["word_freqs"]) {
-        score += Math.log(allResults[word_index]);
+        score += Math.log(subreddit["word_freqs"][user_words[word_index]]);
       } else {
         score += Math.log(1);
       }
@@ -300,6 +300,7 @@ function getBestSubreddit(messageText, senderID) {
   }
   sendTextMessage(senderID, top_subreddit);
 }
+
 // function getBestSubreddit(messageText, senderID) {
 //   var user_words = parse_message(messageText);
 //   rp(dbUrl + '/.json?shallow=true').then(function(res) {
@@ -960,7 +961,7 @@ function parseIntoData(allResults) {
 // certificate authority.
 app.listen(app.get('port'), function() {
   makeStopWordSet();
-  makeData();
+  //makeData();
   console.log('Node app is running on port', app.get('port'));
 });
 
