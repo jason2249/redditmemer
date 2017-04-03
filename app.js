@@ -297,7 +297,7 @@ function getBestSubreddit(messageText, senderID) {
       score -= Math.log(doc_count);
       if (score > top_score) {
         top_score = score;
-        top_subreddit = subreddits[i];
+        top_subreddit = sub;
       }
     }     
   }
