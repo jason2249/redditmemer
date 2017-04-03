@@ -962,7 +962,7 @@ function parseIntoData(allResults) {
 // certificate authority.
 app.listen(app.get('port'), function() {
   makeStopWordSet();
-  //makeData();
+  makeData();
   console.log('Node app is running on port', app.get('port'));
 });
 
