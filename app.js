@@ -265,7 +265,7 @@ function receivedMessage(event) {
   if (messageText) {
     if (messageCount >= 0) {
       var best_subreddit = getBestSubreddit(messageText, senderID);
-      send_subreddit(best_subreddit, senderID);
+      sendSubreddit(best_subreddit, senderID);
       best_subreddits.push(best_subreddit);
       messageCount++;
     }
