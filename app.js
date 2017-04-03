@@ -497,72 +497,6 @@ function sendImageMessage(recipientId) {
 }
 
 /*
- * Send a Gif using the Send API.
- *
- */
-function sendGifMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "image",
-        payload: {
-          url: SERVER_URL + "/assets/instagram_logo.gif"
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
- * Send audio using the Send API.
- *
- */
-function sendAudioMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "audio",
-        payload: {
-          url: SERVER_URL + "/assets/sample.mp3"
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
- * Send a video using the Send API.
- *
- */
-function sendVideoMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "video",
-        payload: {
-          url: SERVER_URL + "/assets/allofus480.mov"
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
  * Send a text message using the Send API.
  *
  */
@@ -575,108 +509,6 @@ function sendTextMessage(recipientId, messageText) {
       text: messageText,
       metadata: "DEVELOPER_DEFINED_METADATA"
     }
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
- * Send a Structured Message (Generic Message type) using the Send API.
- *
- */
-function sendGenericMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "generic",
-          elements: [{
-            title: "rift",
-            subtitle: "Next-generation virtual reality",
-            item_url: "https://www.oculus.com/en-us/rift/",               
-            image_url: SERVER_URL + "/assets/rift.png",
-            buttons: [{
-              type: "web_url",
-              url: "https://www.oculus.com/en-us/rift/",
-              title: "Open Web URL"
-            }, {
-              type: "postback",
-              title: "Call Postback",
-              payload: "Payload for first bubble",
-            }],
-          }, {
-            title: "touch",
-            subtitle: "Your Hands, Now in VR",
-            item_url: "https://www.oculus.com/en-us/touch/",               
-            image_url: SERVER_URL + "/assets/touch.png",
-            buttons: [{
-              type: "web_url",
-              url: "https://www.oculus.com/en-us/touch/",
-              title: "Open Web URL"
-            }, {
-              type: "postback",
-              title: "Call Postback",
-              payload: "Payload for second bubble",
-            }]
-          }]
-        }
-      }
-    }
-  };  
-
-  callSendAPI(messageData);
-}
-
-/*
- * Send a read receipt to indicate the message has been read
- *
- */
-function sendReadReceipt(recipientId) {
-  console.log("Sending a read receipt to mark message as seen");
-
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    sender_action: "mark_seen"
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
- * Turn typing indicator on
- *
- */
-function sendTypingOn(recipientId) {
-  console.log("Turning typing indicator on");
-
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    sender_action: "typing_on"
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
- * Turn typing indicator off
- *
- */
-function sendTypingOff(recipientId) {
-  console.log("Turning typing indicator off");
-
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    sender_action: "typing_off"
   };
 
   callSendAPI(messageData);
@@ -698,7 +530,7 @@ function callSendAPI(messageData) {
     if (!error && response.statusCode == 200) {
       var recipientId = body.recipient_id;
       var messageId = body.message_id;
-      if (messageData["message"]["attachment"]["type"] == "template") {
+      if ("attachment" in messageData["message"] && messageData["message"]["attachment"]["type"] == "template") {
         sendTextMessage(messageData["recipient"]["id"], "What do you think of this fine subreddit? Here's the current top post!");
       }
       if (messageId) {
