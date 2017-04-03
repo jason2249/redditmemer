@@ -952,7 +952,7 @@ function parseIntoData(allResults) {
   for (var i = 0; i < allResults.length; i++) {
     subredditData[subreddits[i]] = JSON.parse(allResults[i]);
   }
-  console.log("Finished reading!");
+  console.log("Finished reading!!");
   console.log(subredditData["leagueoflegends"]["word_count"]);
 }
 
