@@ -927,33 +927,42 @@ function makeStopWordSet() {
   stopwords = new Set(fs.readFileSync('englishstop.txt').toString().split("\n"));
 }
 
-function makeData() {
-  rp(dbUrl + '/.json?shallow=true').then(function(res) {
-    res = JSON.parse(res);
-    var urls = [];
-    for (var subreddit in res) {
-      if (res.hasOwnProperty(subreddit)) {
-        subreddits.push(subreddit);
-        urls.push(dbUrl + '/' + subreddit + '/.json');
-      }
-    }
-    console.log("start mapping!");
-    Promise.map(urls, function(url) {
-        return rp(url);
-    }, {concurrency: 4}).then(function(allResults) {
-        console.log("Start parsing data!");
-        parseIntoData(allResults);
-    });
-  }).catch(function(err) {
-    console.log(err);
-  });
-}
+// function makeData() {
+//   rp(dbUrl + '/.json?shallow=true').then(function(res) {
+//     res = JSON.parse(res);
+//     var urls = [];
+//     for (var subreddit in res) {
+//       if (res.hasOwnProperty(subreddit)) {
+//         subreddits.push(subreddit);
+//         urls.push(dbUrl + '/' + subreddit + '/.json');
+//       }
+//     }
+//     console.log("start mapping!");
+//     Promise.map(urls, function(url) {
+//         return rp(url);
+//     }, {concurrency: 4}).then(function(allResults) {
+//         console.log("Start parsing data!");
+//         parseIntoData(allResults);
+//     });
+//   }).catch(function(err) {
+//     console.log(err);
+//   });
+// }
 
-function parseIntoData(allResults) {
-  for (var i = 0; i < allResults.length; i++) {
-    subredditData[subreddits[i]] = JSON.parse(allResults[i]);
-  }
-  console.log("Finished reading!!");
+// function parseIntoData(allResults) {
+//   for (var i = 0; i < allResults.length; i++) {
+//     subredditData[subreddits[i]] = JSON.parse(allResults[i]);
+//   }
+//   console.log("Finished reading!!");
+//   console.log(subredditData["leagueoflegends"]["word_count"]);
+// }
+
+function makeData() {
+  console.log("start reading file");
+  subredditData = fs.readFileSync('englishstop.txt').toString();
+  console.log("start parsing to JSON");
+  subredditData = JSON.parse(subredditData);
+  console.log("finished!");
   console.log(subredditData["leagueoflegends"]["word_count"]);
 }
 
