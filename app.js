@@ -339,10 +339,10 @@ function sendSubreddit(best_subreddit, senderID) {
       messageSubtitle = messageSubtitle.substring(0,80);
     }
     var imgUrl = "";
-    if (topPost["is_self"]) {
-      imgUrl = SERVER_URL + "/assets/reddit-alien.png";
+    if ("preview" in topPost) {
+      imgUrl = topPost["preview"]["images"][0]["source"]["url"];
     } else {
-      imgUrl = topPost["thumbnail"];
+      imgUrl = SERVER_URL + "/assets/reddit-alien.png";
     }
     var linkUrl = topPost["url"];
     var messageData = {
@@ -358,14 +358,18 @@ function sendSubreddit(best_subreddit, senderID) {
               title: messageTitle,
               subtitle: messageSubtitle,
               item_url: linkUrl,           
-              image_url: imgUrl
+              image_url: imgUrl,
+              buttons: [{
+                type: "web_url",
+                url: "https://www.reddit.com/r/" + best_subreddit,
+                title: "Visit /r/" + best_subreddit
+              }]
             }]
           }
         }
       }
     }
     callSendAPI(messageData);
-    sendTextMessage(senderID, "What do you think of /r/" + best_subreddit + "?");
   });
 }
 /*
@@ -694,7 +698,9 @@ function callSendAPI(messageData) {
     if (!error && response.statusCode == 200) {
       var recipientId = body.recipient_id;
       var messageId = body.message_id;
-
+      if (messageData["message"]["type"] == "template") {
+        sendTextMessage(messageData["recipient"]["id"], "What do you think of this fine subreddit?");
+      }
       if (messageId) {
         console.log("Successfully sent message with id %s to recipient %s", 
           messageId, recipientId);
