@@ -265,9 +265,15 @@ function receivedMessage(event) {
   if (messageText) {
     if (messageCount >= 0) {
       var best_subreddit = getBestSubreddit(messageText, senderID);
-      sendSubreddit(best_subreddit, senderID);
-      best_subreddits.push(best_subreddit);
-      messageCount++;
+      if (best_subreddit == "miela") {
+        sendTextMessage(senderID, "Sorry, that is too specific for my data to handle! Give me some more common words.");
+      } else if (best_subreddit == "All stop words") {
+        sendTextMessage(senderID, "Sorry, but can you use some more specific words? The words you used are way too common!");
+      } else {
+        sendSubreddit(best_subreddit, senderID);
+        best_subreddits.push(best_subreddit);
+        messageCount++;
+      }
     }
   } else if (messageAttachments) {
     sendImageMessage(senderID);
@@ -277,6 +283,9 @@ function receivedMessage(event) {
 
 function getBestSubreddit(messageText, senderID) {
   var user_words = parse_message(messageText);
+  if (user_words.length == 0) {
+    return "All stop words";
+  }
   var top_score = Number.MIN_SAFE_INTEGER;
   var top_subreddit = "";
   for (var sub in subredditData) {
