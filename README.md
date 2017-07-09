@@ -7,7 +7,12 @@ New to Reddit? Or just looking for more subreddits to waste time with? Then look
 
 Simply visit www.facebook.com/redditmemer and click **Send Message** to get started with the chatbot. This may take a while to start up since I'm too cheap and am using the free dyno from Heroku.
 
-The chatbot will prompt you for information about yourself, and then will attempt to recommend a subreddit. When a subreddit is recommended, it pulls the current top post from that subreddit and sends it along with a link to the subreddit itself for your viewing pleasure.
+The chatbot will prompt you for information about yourself, and then will attempt to recommend a subreddit. Some questions you can answer about yourself are:
+* What do you like to do in your spare time?
+* How would you describe yourself?
+* Is there anything you want to learn about?
+
+When a subreddit is recommended, it pulls the current top post from that subreddit and sends it along with a link to the subreddit itself for your viewing pleasure.
 
 ## Design
 
