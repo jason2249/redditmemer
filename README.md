@@ -1,36 +1,32 @@
-# Messenger Platform Sample -- node.js
+# Reddit Memer
+*@author Jason Lin, jason0@stanford.edu*
 
-This project is an example server for Messenger Platform built in Node.js. With this app, you can send it messages and it will echo them back to you. You can also see examples of the different types of Structured Messages. 
+New to Reddit? Or just looking for more subreddits to waste time with? Then look no further! The Reddit Memer chatbot uses basic machine learning to recommend a subreddit catered to your interests. 
 
-It contains the following functionality:
+## Usage
 
-* Webhook (specifically for Messenger Platform events)
-* Send API 
-* Web Plugins
-* Messenger Platform v1.1 features
+Simply visit www.facebook.com/redditmemer and click **Send Message** to get started with the chatbot. This may take a while to start up since I'm too cheap and am using the free dyno from Heroku.
 
-Follow the [walk-through](https://developers.facebook.com/docs/messenger-platform/quickstart) to learn about this project in more detail.
+The chatbot will prompt you for information about yourself, and then will attempt to recommend a subreddit. When a subreddit is recommended, it pulls the current top post from that subreddit and sends it along with a link to the subreddit itself for your viewing pleasure.
 
-## Setup
+## Design
 
-Set the values in `config/default.json` before running the sample. Descriptions of each parameter can be found in `app.js`. Alternatively, you can set the corresponding environment variables as defined in `app.js`.
+To get started with this project, I first needed data, and lots of it. Thankfully, I was able to use nearly 32 gigabytes of reddit comments as my dataset thanks to [this](https://www.reddit.com/r/datasets/comments/3bxlg7/i_have_every_publicly_available_reddit_comment/) reddit post! 
 
-Replace values for `APP_ID` and `PAGE_ID` in `public/index.html`.
+Next, I filtered down those 32 gigabytes of comments by selecting only those with score of 10 or higher. This was to avoid junk comments and comments that were downvoted. I didn't want to use downvoted comments because if they were downvoted, they wouldn't as accurately represent the sentiment of a certain subreddit. 
 
-## Run
+I used a Naive Bayes classifier with Laplace smoothing to classify user input words into a recommended subreddit. 
 
-You can start the server by running `npm start`. However, the webhook must be at a public URL that the Facebook servers can reach. Therefore, running the server locally on your machine will not work.
+When calculating scores for words, I chose to binarize the word frequencies per comment because we don't want one comment with 50 mentions of the word "Harry Potter" in a random subreddit to be weighted more than 30 different mentions of "Harry Potter" in the actual Harry Potter subreddit!
 
-You can run this example on a cloud service provider like Heroku, Google Cloud Platform or AWS. Note that webhooks must have a valid SSL certificate, signed by a certificate authority. Read more about setting up SSL for a [Webhook](https://developers.facebook.com/docs/graph-api/webhooks#setup).
+I used Laplace add-1 smoothing to account for words entered by the user but not seen in the comment data, because it's very likely that the word not seen has been mentioned in the subreddit, just not enough to show up significantly. 
 
-## Webhook
+Finally, in order to promote the finding of more unique subreddits, instead of multiplying the final scores by the log frequency of the subreddit, I multiplied final scores by the **inverse** log frequencies of their subreddits. This was to ensure huge subreddits such as AskReddit did not dominate every result and new, smaller, and interesting subreddits were able to be discovered!
 
-All webhook code is in `app.js`. It is routed to `/webhook`. This project handles callbacks for authentication, messages, delivery confirmation and postbacks. More details are available at the [reference docs](https://developers.facebook.com/docs/messenger-platform/webhook-reference).
+## Credits 
 
-## "Send to Messenger" and "Message Us" Plugin
-
-An example of the "Send to Messenger" plugin and "Message Us" plugin are located at `index.html`. The "Send to Messenger" plugin can be used to trigger an authentication event. More details are available at the [reference docs](https://developers.facebook.com/docs/messenger-platform/plugin-reference).
-
-## License
-
-See the LICENSE file in the root directory of this source tree. Feel free to useand modify the code.
+Thanks to:
+/u/stuck_in_the_matrix for the comments dataset,
+Facebook for the messenger bot starter code,
+Reddit for the awesome website,
+and CS109 and CS124 for teaching me about the Naive Bayes classifier!

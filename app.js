@@ -1,10 +1,8 @@
 /*
- * Copyright 2016-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the license found in the
- * LICENSE file in the root directory of this source tree.
- *
+ * @author Jason Lin, forked from Facebook.
+ * jason0@stanford.edu
+ * Reddit Memer Messenger chatbot - 
+ * recommends new subreddits based on user input. 
  */
 
 /* jshint node: true, devel: true */
@@ -20,11 +18,9 @@ const
   promise = require('promise'),
   rp = require('request-promise'),
   fs = require('fs'),
-  firebase = require('firebase'),
   Promise = require('bluebird'),
   num_types = 959198,
-  num_docs = 3490408,
-  dbUrl = 'https://redditmemer-3cde1.firebaseio.com';
+  num_docs = 3490408;
 
 var app = express();
 app.set('port', process.env.PORT || 5000);
@@ -33,14 +29,7 @@ app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
 
 var stopwords = [];
-var best_subreddits = [];
 var subredditData = {};
-
-/*
- * Be sure to setup your config values before running this code. You can 
- * set them using environment variables or modifying the config file in /config.
- *
- */
 
 // App Secret can be retrieved from the App Dashboard
 const APP_SECRET = (process.env.MESSENGER_APP_SECRET) ? 
@@ -69,9 +58,7 @@ if (!(APP_SECRET && VALIDATION_TOKEN && PAGE_ACCESS_TOKEN && SERVER_URL)) {
 }
 
 /*
- * Use your own validation token. Check that the token used in the Webhook 
- * setup is the same token used here.
- *
+ * Webhook validation.
  */
 app.get('/webhook', function(req, res) {
   if (req.query['hub.mode'] === 'subscribe' &&
@@ -86,11 +73,7 @@ app.get('/webhook', function(req, res) {
 
 
 /*
- * All callbacks for Messenger are POST-ed. They will be sent to the same
- * webhook. Be sure to subscribe your app to your page to receive callbacks
- * for your page. 
- * https://developers.facebook.com/docs/messenger-platform/product-overview/setup#subscribe_app
- *
+ * Handle Messenger callbacks. 
  */
 app.post('/webhook', function (req, res) {
   var data = req.body;
@@ -115,8 +98,6 @@ app.post('/webhook', function (req, res) {
           receivedPostback(messagingEvent);
         } else if (messagingEvent.read) {
           receivedMessageRead(messagingEvent);
-        } else if (messagingEvent.account_linking) {
-          receivedAccountLink(messagingEvent);
         } else {
           console.log("Webhook received unknown messagingEvent: ", messagingEvent);
         }
@@ -124,43 +105,12 @@ app.post('/webhook', function (req, res) {
     });
 
     // Assume all went well.
-    //
-    // You must send back a 200, within 20 seconds, to let us know you've 
-    // successfully received the callback. Otherwise, the request will time out.
     res.sendStatus(200);
   }
 });
 
 /*
- * This path is used for account linking. The account linking call-to-action
- * (sendAccountLinking) is pointed to this URL. 
- * 
- */
-app.get('/authorize', function(req, res) {
-  var accountLinkingToken = req.query.account_linking_token;
-  var redirectURI = req.query.redirect_uri;
-
-  // Authorization Code should be generated per user by the developer. This will 
-  // be passed to the Account Linking callback.
-  var authCode = "1234567890";
-
-  // Redirect users to this URI on successful login
-  var redirectURISuccess = redirectURI + "&authorization_code=" + authCode;
-
-  res.render('authorize', {
-    accountLinkingToken: accountLinkingToken,
-    redirectURI: redirectURI,
-    redirectURISuccess: redirectURISuccess
-  });
-});
-
-/*
- * Verify that the callback came from Facebook. Using the App Secret from 
- * the App Dashboard, we can verify the signature that is sent with each 
- * callback in the x-hub-signature field, located in the header.
- *
- * https://developers.facebook.com/docs/graph-api/webhooks#setup
- *
+ * Verify that the callback came from Facebook. U
  */
 function verifyRequestSignature(req, res, buf) {
   var signature = req.headers["x-hub-signature"];
@@ -185,23 +135,13 @@ function verifyRequestSignature(req, res, buf) {
 }
 
 /*
- * Authorization Event
- *
- * The value for 'optin.ref' is defined in the entry point. For the "Send to 
- * Messenger" plugin, it is the 'data-ref' field. Read more at 
- * https://developers.facebook.com/docs/messenger-platform/webhook-reference/authentication
- *
+ * Authorization Event.
  */
 function receivedAuthentication(event) {
   var senderID = event.sender.id;
   var recipientID = event.recipient.id;
   var timeOfAuth = event.timestamp;
 
-  // The 'ref' field is set in the 'Send to Messenger' plugin, in the 'data-ref'
-  // The developer can set this to an arbitrary value to associate the 
-  // authentication callback with the 'Send to Messenger' click event. This is
-  // a way to do account linking when the user clicks the 'Send to Messenger' 
-  // plugin.
   var passThroughParam = event.optin.ref;
 
   console.log("Received authentication for user %d and page %d with pass " +
@@ -216,15 +156,9 @@ function receivedAuthentication(event) {
 /*
  * Message Event
  *
- * This event is called when a message is sent to your page. The 'message' 
- * object format can vary depending on the kind of message that was received.
- * Read more at https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-received
- *
- * For this example, we're going to echo any text that we get. If we get some 
- * special keywords ('button', 'generic', 'receipt'), then we'll send back
- * examples of those bubbles to illustrate the special message bubbles we've 
- * created. If we receive a message with an attachment (image, video, audio), 
- * then we'll simply confirm that we've received the attachment.
+ * This event is called when a message is sent to the page. 
+ * The bot only responds to text messages and attempts to calculate
+ * the best subreddit based on the text received. 
  * 
  */
 function receivedMessage(event) {
@@ -237,29 +171,11 @@ function receivedMessage(event) {
     senderID, recipientID, timeOfMessage);
   console.log(JSON.stringify(message));
 
-  var isEcho = message.is_echo;
-  var messageId = message.mid;
-  var appId = message.app_id;
   var metadata = message.metadata;
 
   // You may get a text or attachment but not both
   var messageText = message.text;
   var messageAttachments = message.attachments;
-  var quickReply = message.quick_reply;
-
-  if (isEcho) {
-    // Just logging message echoes to console
-    console.log("Received echo for message %s and app %d with metadata %s", 
-      messageId, appId, metadata);
-    return;
-  } else if (quickReply) {
-    var quickReplyPayload = quickReply.payload;
-    console.log("Quick reply for message %s with payload %s",
-      messageId, quickReplyPayload);
-
-    sendTextMessage(senderID, "Quick reply tapped");
-    return;
-  }
 
   if (messageText) {
     var best_subreddit = getBestSubreddit(messageText, senderID);
@@ -269,7 +185,6 @@ function receivedMessage(event) {
       sendTextMessage(senderID, "Sorry, but can you use some more specific words? The words you used are way too common!");
     } else {
       sendSubreddit(best_subreddit, senderID);
-      best_subreddits.push(best_subreddit);
     }
   } else if (messageAttachments) {
     sendImageMessage(senderID);
@@ -277,6 +192,9 @@ function receivedMessage(event) {
   }
 }
 
+/*
+ * Calculate best subreddit using Naive Bayes with Laplace smoothing.
+ */
 function getBestSubreddit(messageText, senderID) {
   var user_words = parse_message(messageText);
   if (user_words.length == 0) {
@@ -309,6 +227,9 @@ function getBestSubreddit(messageText, senderID) {
   return top_subreddit;
 }
 
+/*
+ * Parse message to remove stop words and non alphanumeric characters.
+ */
 function parse_message(messageText) {
   var user_words = messageText.toLowerCase();
   user_words = user_words.split(" ");
@@ -324,6 +245,9 @@ function parse_message(messageText) {
   return final_words
 }
 
+/*
+ * Send information about a subreddit using a generic template.
+ */
 function sendSubreddit(best_subreddit, senderID) {
   rp("https://www.reddit.com/r/" + best_subreddit + "/.json?limit=2").then(function(res) {
     res = JSON.parse(res);
@@ -377,12 +301,9 @@ function sendSubreddit(best_subreddit, senderID) {
     callSendAPI(messageData);
   });
 }
+
 /*
- * Delivery Confirmation Event
- *
- * This event is sent to confirm the delivery of a message. Read more about 
- * these fields at https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-delivered
- *
+ * Delivery Confirmation Event.
  */
 function receivedDeliveryConfirmation(event) {
   var senderID = event.sender.id;
@@ -404,11 +325,7 @@ function receivedDeliveryConfirmation(event) {
 
 
 /*
- * Postback Event
- *
- * This event is called when a postback is tapped on a Structured Message. 
- * https://developers.facebook.com/docs/messenger-platform/webhook-reference/postback-received
- * 
+ * Postback Event.
  */
 function receivedPostback(event) {
   var senderID = event.sender.id;
@@ -427,7 +344,9 @@ function receivedPostback(event) {
   introduce(senderID);
 }
 
-
+/*
+ * Has the chatbot introduce itself, customizing the greeting to the user's gender.
+ */
 function introduce(senderID) {
   rp("https://graph.facebook.com/v2.6/" + senderID + "?access_token=" + PAGE_ACCESS_TOKEN).then(function(res) {
     res = JSON.parse(res);
@@ -452,11 +371,7 @@ function askFirstQuestion(senderID) {
 }
 
 /*
- * Message Read Event
- *
- * This event is called when a previously-sent message has been read.
- * https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-read
- * 
+ * Message Read Event.
  */
 function receivedMessageRead(event) {
   var senderID = event.sender.id;
@@ -471,30 +386,7 @@ function receivedMessageRead(event) {
 }
 
 /*
- * Send an image using the Send API.
- *
- */
-function sendImageMessage(recipientId) {
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "image",
-        payload: {
-          url: SERVER_URL + "/assets/uwot.jpg"
-        }
-      }
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-/*
  * Send a text message using the Send API.
- *
  */
 function sendTextMessage(recipientId, messageText) {
   var messageData = {
@@ -528,9 +420,6 @@ function callSendAPI(messageData) {
       var messageId = body.message_id;
       if ("attachment" in messageData["message"] && messageData["message"]["attachment"]["type"] == "template") {
         sendTextMessage(messageData["recipient"]["id"], "What do you think of this fine subreddit? Here's the current top post!");
-        setTimeout(function() {
-          sendTextMessage(senderID, "Tell me something else and I'll make another recommendation.");
-        }, 2000);
       }
       if (messageId) {
         console.log("Successfully sent message with id %s to recipient %s", 
@@ -545,10 +434,16 @@ function callSendAPI(messageData) {
   });  
 }
 
+/*
+ * Make set of stop words from text file.
+ */
 function makeStopWordSet() {
   stopwords = new Set(fs.readFileSync('englishstop.txt').toString().split("\n"));
 }
 
+/* 
+ * Parse subreddit data from text file. 
+ */
 function makeData() {
   console.log("Begin reading data file...");
   subredditData = fs.readFileSync('data.txt').toString();
