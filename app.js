@@ -32,7 +32,6 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
 app.use(express.static('public'));
 
-var messageCount = 0;
 var stopwords = [];
 var best_subreddits = [];
 var subredditData = {};
@@ -263,17 +262,14 @@ function receivedMessage(event) {
   }
 
   if (messageText) {
-    if (messageCount >= 0) {
-      var best_subreddit = getBestSubreddit(messageText, senderID);
-      if (best_subreddit == "miela") {
-        sendTextMessage(senderID, "Sorry, that is too specific for my data to handle! Give me some more common words.");
-      } else if (best_subreddit == "All stop words") {
-        sendTextMessage(senderID, "Sorry, but can you use some more specific words? The words you used are way too common!");
-      } else {
-        sendSubreddit(best_subreddit, senderID);
-        best_subreddits.push(best_subreddit);
-        messageCount++;
-      }
+    var best_subreddit = getBestSubreddit(messageText, senderID);
+    if (best_subreddit == "miela") {
+      sendTextMessage(senderID, "Sorry, that is too specific for my data to handle! Give me some more common words.");
+    } else if (best_subreddit == "All stop words") {
+      sendTextMessage(senderID, "Sorry, but can you use some more specific words? The words you used are way too common!");
+    } else {
+      sendSubreddit(best_subreddit, senderID);
+      best_subreddits.push(best_subreddit);
     }
   } else if (messageAttachments) {
     sendImageMessage(senderID);
@@ -445,23 +441,14 @@ function introduce(senderID) {
     }
     var greeting = "Greetings " + greetingName + "! I am delighted to make your acquaintance.";
     sendTextMessage(senderID, greeting);
-    setTimeout(function() {
-      sendTextMessage(senderID, "My job is to show you the wonders of a simply breathtaking site called reddit.com, " +
-        "full of enlightened and intellectual redditors such as myself.");
-      setTimeout(function() {
-        sendTextMessage(senderID, "Simply answer some of my questions and I'll recommend you some highly thought-provoking " +
-          "new subreddits using my MACHINE LEARNING (TM) algorithms!");
-        askFirstQuestion(senderID);
-      }, 4000);
-    }, 2000);
+    askFirstQuestion(senderID);
   });
 }
 
 function askFirstQuestion(senderID) {
-   messageCount = 0;
    setTimeout(function() {
-    sendTextMessage(senderID, "To start off, tell me about what you like to do in your free time!");
-   }, 4000);
+    sendTextMessage(senderID, "Tell me something about yourself and I'll recommend a subreddit to you.");
+   }, 2000);
 }
 
 /*
@@ -541,6 +528,9 @@ function callSendAPI(messageData) {
       var messageId = body.message_id;
       if ("attachment" in messageData["message"] && messageData["message"]["attachment"]["type"] == "template") {
         sendTextMessage(messageData["recipient"]["id"], "What do you think of this fine subreddit? Here's the current top post!");
+        setTimeout(function() {
+          sendTextMessage(senderID, "Tell me something else and I'll make another recommendation.");
+        }, 2000);
       }
       if (messageId) {
         console.log("Successfully sent message with id %s to recipient %s", 
